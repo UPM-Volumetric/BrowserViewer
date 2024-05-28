@@ -1,0 +1,19 @@
+{
+  "name": "viewer",
+  "version": "1.0.0",
+  "description": "## Installation",
+  "main": "src/index.js",
+  "scripts": {
+    "start": "npx vite src",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "",
+  "dependencies": {
+    "camera-controls": "^2.8.3",
+    "three": "^0.164.1"
+  },
+  "devDependencies": {
+    "vite": "^5.2.11"
+  }
+}
