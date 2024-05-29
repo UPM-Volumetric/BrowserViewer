@@ -2,6 +2,7 @@ import * as THREE from "three";
 import CameraControls from "camera-controls";
 import {PLYLoader} from "three/examples/jsm/loaders/PLYLoader.js";
 
+// Create the scene
 CameraControls.install({THREE: THREE});
 
 const clock = new THREE.Clock();
@@ -26,6 +27,7 @@ for (var i = 0; i < manifest.tiles.length; i++)
 {
     var tile = manifest.tiles[i]
 
+    // Make an invisible cube in the viewport for each tile
     const geometry = new THREE.BoxGeometry(tile.width, tile.height, tile.depth);
     const material = new THREE.MeshBasicMaterial({color: 0x00ff00, transparent: true, opacity: 0});
     const cube = new THREE.Mesh(geometry, material);
@@ -36,6 +38,7 @@ for (var i = 0; i < manifest.tiles.length; i++)
 
     geometry.userData.tile = tile;
 
+    // Load the tile if the invisible cube is in the viewport
     cube.onBeforeRender = function (renderer, scene, camera, geometry, material, group)
     {
         if (!geometry.userData.loaded)
@@ -55,7 +58,7 @@ for (var i = 0; i < manifest.tiles.length; i++)
     }
 }
 
-// Grid
+// Add the grid
 const gridHelper = new THREE.GridHelper(50, 50);
 gridHelper.position.y = -1;
 scene.add(gridHelper);
