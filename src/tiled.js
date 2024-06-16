@@ -22,6 +22,12 @@ const cameraControls = new CameraControls(camera, canvas);
 // Load the manifest
 const response = await fetch("data/redandblack/manifest.json");
 const manifest = await response.json();
+var tiles = [];
+
+// Sets the max memory to use in the app in bytes
+// This is a suggestion and not a hard limit. The app will still download at least the worst LOD for each tile that lies in the user's viewport
+var maxMemory = 1000000;
+var currentMemory = 0;
 
 for (var i = 0; i < manifest.tiles.length; i++)
 {
@@ -29,12 +35,14 @@ for (var i = 0; i < manifest.tiles.length; i++)
 
     // Make an invisible cube in the viewport for each tile
     const geometry = new THREE.BoxGeometry(tile.width, tile.height, tile.depth);
-    const material = new THREE.MeshBasicMaterial({color: 0x00ff00, transparent: true, opacity: 0.2});
+    const material = new THREE.MeshBasicMaterial({color: 0x00ff00, transparent: true, opacity: 0.0});
     const cube = new THREE.Mesh(geometry, material);
 
     cube.position.set(tile.x, tile.y, tile.z);
     cube.userData.tile = tile;
     cube.userData.tile.lod = Infinity;
+
+    tiles.push(cube);
     
     scene.add(cube);
 
@@ -68,16 +76,43 @@ for (var i = 0; i < manifest.tiles.length; i++)
                 if (this.userData.tile.pointsName != undefined)
                 {
                     var selectedObject = scene.getObjectByName(this.userData.tile.pointsName);
+                    currentMemory -= selectedObject.size;
                     scene.remove(selectedObject);
                 }
 
                 this.userData.tile.lodIndex = lodIndex;
                 this.userData.tile.pointsName = points.name;
+
+                currentMemory += data.size
             }, null, (error) => {
                 console.log(error);
             });
         }
     }
+
+    cube.addEventListener("update", function()
+    {
+        // Manage memory
+        if (currentMemory <= maxMemory)
+            return;
+
+        const frustum = new THREE.Frustum()
+        const matrix = new THREE.Matrix4().multiplyMatrices(camera.projectionMatrix, camera.matrixWorldInverse)
+        frustum.setFromProjectionMatrix(matrix)
+        
+        if (!frustum.intersectsObject(this))
+        {
+            if (this.userData.tile.pointsName != undefined)
+            {
+                var selectedObject = scene.getObjectByName(this.userData.tile.pointsName);
+                currentMemory -= selectedObject.size;
+                scene.remove(selectedObject);
+            }
+
+            this.userData.tile.lod = Infinity;
+            this.userData.tile.pointsName = undefined;
+        }
+    });
 }
 
 function chooseLod(distance, minDistance, lods)
@@ -116,6 +151,11 @@ function animate ()
 	cameraControls.update(delta);
 
 	requestAnimationFrame(animate);
+
+    for (var i = 0; i < tiles.length; i++)
+    {
+        tiles[i].dispatchEvent({type: "update"});
+    }
 
     renderer.render(scene, camera);
 }
