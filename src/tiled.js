@@ -2,6 +2,94 @@ import * as THREE from "three";
 import CameraControls from "camera-controls";
 import {PLYLoader} from "three/examples/jsm/loaders/PLYLoader.js";
 
+class Tile
+{
+    static #material = new THREE.MeshBasicMaterial({color: 0x00ff00, transparent: true, opacity: 0.0});
+    #tile;
+    #scene;
+    #cube;
+    #points;
+    #loaded;
+
+    constructor(tile, scene)
+    {
+        this.#tile = tile;
+        this.#scene = scene;
+    }
+
+    /**
+     * Makes an invisible cube that represents the tile boundaries
+     */
+    build()
+    {
+        var geometry = new THREE.BoxGeometry(this.#tile.width, this.#tile.height, this.#tile.depth);
+        
+        this.#cube = new THREE.Mesh(geometry, Tile.#material);
+        this.#cube.position.set(this.#tile.x, this.#tile.y, this.#tile.z);
+        this.#cube.userData.tile = this;
+
+        this.#scene.add(this.#cube);
+
+        this.load();
+    }
+
+    load()
+    {
+        this.#cube.onBeforeRender = (renderer, scene, camera, geometry, material, group) =>
+        {
+            if (this.#loaded)
+                return;
+
+            this.#loaded = true;
+
+            const loader = new PLYLoader();
+            const uri = this.#tile.representations[0].segment;
+            
+            loader.load(uri, (data) =>
+            {
+                // const material = new THREE.PointsMaterial({size: 0.1, sizeAttenuation: false, vertexColors: true});
+
+                const material = new THREE.ShaderMaterial({
+                    vertexColors: true,
+                    vertexShader: `
+                        precision highp float;
+                        varying vec3 vColor;
+        
+                        void main() {
+                            vColor = color;
+                            gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+
+                            float dx = pow(position[0] - cameraPosition[0], 2.0);
+                            float dy = pow(position[1] - cameraPosition[1], 2.0);
+                            float dz = pow(position[2] - cameraPosition[2], 2.0);
+                            float delta  = pow(dx + dy + dz, 0.5);
+
+                            gl_PointSize = 1300.0 / delta; // The factor is model dependant
+                        }
+                    `,
+                    fragmentShader: /*THREE.ShaderLib["points"].fragmentShader*/`
+                        // TODO The color is too dark
+                        precision highp float;
+                        varying vec3 vColor;
+
+                        void main() {
+                            gl_FragColor = vec4(vColor, 1);
+                        }
+                    `
+                });
+
+                const points = new THREE.Points(data, material);
+    
+                this.#points = points;
+                this.#scene.add(points);
+                this.#loaded = true;
+            }, null, (error) => {
+                console.log(error);
+            });
+        }
+    }
+}
+
 // Create the scene
 CameraControls.install({THREE: THREE});
 
@@ -11,7 +99,7 @@ const scene = new THREE.Scene();
 scene.background = new THREE.Color(1, 1, 1);
 
 const camera = new THREE.PerspectiveCamera(75, innerWidth / innerHeight, 0.01, 10000000000);
-camera.position.set(10000, 0, 10000);
+camera.position.set(600, 100, 600);
 
 const renderer = new THREE.WebGLRenderer({canvas: canvas, antialias: true});
 
@@ -24,124 +112,16 @@ const response = await fetch("data/redandblack/manifest.json");
 const manifest = await response.json();
 var tiles = [];
 
-// Sets the max memory to use in the app in bytes
-// This is a suggestion and not a hard limit. The app will still download at least the worst LOD for each tile that lies in the user's viewport
-var maxMemory = 1000000;
-var currentMemory = 0;
-
 for (var i = 0; i < manifest.tiles.length; i++)
 {
-    var tile = manifest.tiles[i]
+    var tile = new Tile(manifest.tiles[i], scene);
 
-    // Make an invisible cube in the viewport for each tile
-    const geometry = new THREE.BoxGeometry(tile.width, tile.height, tile.depth);
-    const material = new THREE.MeshBasicMaterial({color: 0x00ff00, transparent: true, opacity: 0.0});
-    const cube = new THREE.Mesh(geometry, material);
-
-    cube.position.set(tile.x, tile.y, tile.z);
-    cube.userData.tile = tile;
-    cube.userData.tile.lod = Infinity;
-
-    tiles.push(cube);
-    
-    scene.add(cube);
-
-    // Load the proper LOD if the tile is in the viewport
-    cube.onBeforeRender = function (renderer, scene, camera, geometry, material, group)
-    {
-        // Get the distance between this object and the camera
-        var distanceWithCamera = camera.position.distanceTo(this.position);
-
-        // Determine the LOD to load
-        var lodIndex = chooseLod(distanceWithCamera, 1000, this.userData.tile.representations);
-        var lod = this.userData.tile.representations[lodIndex].segment
-
-        // Load the LOD if it has not been done yet or if we need a better LOD
-        if (lodIndex < this.userData.tile.lod)
-        {
-            this.userData.tile.lod = lodIndex;
-            
-            const loader = new PLYLoader();
-
-            loader.load(lod, (data) =>
-            {
-                const material = new THREE.PointsMaterial({size: 0.1, vertexColors: true});
-                const points = new THREE.Points(data, material);
-
-                points.name = lod;
-
-                scene.add(points);
-
-                // Remove the old LOD
-                if (this.userData.tile.pointsName != undefined)
-                {
-                    var selectedObject = scene.getObjectByName(this.userData.tile.pointsName);
-                    currentMemory -= selectedObject.size;
-                    scene.remove(selectedObject);
-                }
-
-                this.userData.tile.lodIndex = lodIndex;
-                this.userData.tile.pointsName = points.name;
-
-                currentMemory += data.size
-            }, null, (error) => {
-                console.log(error);
-            });
-        }
-    }
-
-    cube.addEventListener("update", function()
-    {
-        // Manage memory
-        if (currentMemory <= maxMemory)
-            return;
-
-        const frustum = new THREE.Frustum()
-        const matrix = new THREE.Matrix4().multiplyMatrices(camera.projectionMatrix, camera.matrixWorldInverse)
-        frustum.setFromProjectionMatrix(matrix)
-        
-        if (!frustum.intersectsObject(this))
-        {
-            if (this.userData.tile.pointsName != undefined)
-            {
-                var selectedObject = scene.getObjectByName(this.userData.tile.pointsName);
-                currentMemory -= selectedObject.size;
-                scene.remove(selectedObject);
-            }
-
-            this.userData.tile.lod = Infinity;
-            this.userData.tile.pointsName = undefined;
-        }
-    });
-}
-
-function chooseLod(distance, minDistance, lods)
-{
-    // Reverse sort the LODs by number of points
-    lods.sort((a, b) =>
-    {
-        return b.points- a.points;
-    });
-
-    if (lods.length == 1 || distance <= minDistance)
-        return 0;
-
-    for (var i = 1; i < lods.length; i++)
-    {
-        // Get the ratio between the current LOD and the best LOD
-        var ratio = lods[0].points / lods[i].points;
-
-        if (distance <= ratio * minDistance)
-            return i;
-    }
-
-    // Otherwise, return the worst LOD
-    return lods.length - 1;
+    tile.build();
+    tiles.push(tile);
 }
 
 // Add the grid
 const gridHelper = new THREE.GridHelper(50, 50);
-gridHelper.position.y = -1;
 scene.add(gridHelper);
 
 // Animate
@@ -151,11 +131,6 @@ function animate ()
 	cameraControls.update(delta);
 
 	requestAnimationFrame(animate);
-
-    for (var i = 0; i < tiles.length; i++)
-    {
-        tiles[i].dispatchEvent({type: "update"});
-    }
 
     renderer.render(scene, camera);
 }
