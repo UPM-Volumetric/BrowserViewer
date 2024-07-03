@@ -16,11 +16,11 @@ scene.background = new THREE.Color(1, 1, 1);
 const camera = new THREE.PerspectiveCamera(75, innerWidth / innerHeight, 0.01, 10000000000);
 camera.position.set(60, 80, 60);
 
-const renderer = new THREE.WebGLRenderer({canvas: canvas, antialias: true});
+const renderer = new THREE.WebGLRenderer({canvas: canvas!, antialias: true});
 
 renderer.setSize(innerWidth, innerHeight);
 
-const cameraControls = new CameraControls(camera, canvas);
+const cameraControls = new CameraControls(camera, canvas!);
 
 // Add the grid
 const gridHelper = new THREE.GridHelper(50, 50);

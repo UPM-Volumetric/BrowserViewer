@@ -19,16 +19,21 @@ export class PointCloud
      * Loads the manifest and prepares the tiles
      * @param manifestURI The URI of the manifest
      */
-    async loadManifestAndTiles(manifestURI:string, scene:THREE.Scene)
+    private async loadManifestAndTiles(manifestURI:string, scene:THREE.Scene)
     {
-        var response = await fetch(manifestURI);
-        this.manifest = await response.json();
-
-        for (var i = 0; i < this.manifest.tiles.length; i++)
+        fetch(manifestURI).then(async response =>
         {
-            var tile = new Tile(this.manifest.tiles[i], scene);
+            this.manifest = await response.json();
 
-            this.tiles.push(tile);
-        }
+            if (this.manifest !== undefined)
+            {
+                for (var i = 0; i < this.manifest.tiles.length; i++)
+                {
+                    var tile = new Tile(this.manifest.tiles[i], scene);
+    
+                    this.tiles.push(tile);
+                }
+            }
+        }).catch(error => console.error("Error: ", error));
     }
 }

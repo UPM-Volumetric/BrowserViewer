@@ -27,7 +27,7 @@ export class Tile
     /**
      * Makes an invisible cube that represents the tile boundaries
      */
-    build()
+    private build()
     {
         var geometry = new THREE.BoxGeometry(this.tile.width, this.tile.height, this.tile.depth);
         
@@ -43,9 +43,9 @@ export class Tile
     /**
      * Loads the tile when it is in the viewport
      */
-    load()
+    private load()
     {
-        this.cube.onBeforeRender = (renderer, scene, camera, geometry, material, group) =>
+        this.cube!.onBeforeRender = (renderer, scene, camera, geometry, material, group) =>
         {
             if (this.loaded)
                 return;
