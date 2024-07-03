@@ -3,8 +3,6 @@ import CameraControls from "camera-controls";
 import Stats from "three/addons/libs/stats.module.js";
 import { PointCloud } from "./pointCloud";
 
-var canvas = document.getElementById("canvas");
-
 // Create the scene
 CameraControls.install({THREE: THREE});
 
@@ -13,14 +11,35 @@ const scene = new THREE.Scene();
 
 scene.background = new THREE.Color(1, 1, 1);
 
-const camera = new THREE.PerspectiveCamera(75, innerWidth / innerHeight, 0.01, 10000000000);
+const width = window.innerWidth;
+const height = window.innerHeight;
+
+const camera = new THREE.PerspectiveCamera(75, width / height, 0.01, 10000000000);
 camera.position.set(60, 80, 60);
 
-const renderer = new THREE.WebGLRenderer({canvas: canvas!, antialias: true});
+const renderer = new THREE.WebGLRenderer({antialias: true});
+renderer.setSize(width, height);
+document.body.appendChild(renderer.domElement);
 
-renderer.setSize(innerWidth, innerHeight);
+const cameraControls = new CameraControls(camera, renderer.domElement);
+cameraControls.addEventListener("update", () =>
+{
+	showCameraPosition();
+});
 
-const cameraControls = new CameraControls(camera, canvas!);
+var cameraPosition = document.getElementById("camera-position");
+
+function showCameraPosition()
+{
+	cameraPosition!.innerHTML = `
+		<p>Camera Position :</p>
+		<p>x: ${camera.position.x.toFixed(0)}</p>
+		<p>y: ${camera.position.y.toFixed(0)}</p>
+		<p>z: ${camera.position.z.toFixed(0)}</p>
+	`;
+}
+
+showCameraPosition();
 
 // Add the grid
 const gridHelper = new THREE.GridHelper(50, 50);
