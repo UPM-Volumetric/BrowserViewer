@@ -1,5 +1,6 @@
 export const pointCloudeVertexShader = `
     precision highp float;
+    uniform float scaleFactor;
     varying vec3 vColor;
 
     void main() {
@@ -11,7 +12,7 @@ export const pointCloudeVertexShader = `
         float dz = pow(position[2] - cameraPosition[2], 2.0);
         float delta  = pow(dx + dy + dz, 0.5);
 
-        gl_PointSize = 1300.0 / delta; // The factor is model dependant
+        gl_PointSize = scaleFactor / delta;
     }
 `;
 

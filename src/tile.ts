@@ -6,8 +6,15 @@ export class Tile
 {
     private static DEBUG:boolean = false;
     private static tileMaterial = new THREE.MeshBasicMaterial({transparent: true, opacity: 0});
-    private static pointCloudMaterial = new THREE.ShaderMaterial({vertexColors: true, vertexShader: pointCloudeVertexShader, fragmentShader: pointCloudFragmentShader});
-    // private static pointCloudMaterial = new THREE.PointsMaterial({vertexColors: true, size: 1})
+    private static pointCloudMaterial = new THREE.ShaderMaterial({
+        vertexColors: true,
+        vertexShader: pointCloudeVertexShader,
+        fragmentShader: pointCloudFragmentShader,
+        uniforms: {
+            "scaleFactor": {value: 1200}
+        }
+    });
+
     private tile:TileJSON;
     private scene:THREE.Scene;
     private cube?:THREE.Mesh;
