@@ -3,53 +3,61 @@ import CameraControls from "camera-controls";
 import Stats from "three/addons/libs/stats.module.js";
 import { PointCloud } from "./pointCloud";
 
-// Create the scene
-CameraControls.install({THREE: THREE});
-
+// Setup the scene
 const clock = new THREE.Clock();
 const scene = new THREE.Scene();
 
 scene.background = new THREE.Color(1, 1, 1);
 
+// Setup the camera
 const width = window.innerWidth;
 const height = window.innerHeight;
 
 const camera = new THREE.PerspectiveCamera(75, width / height, 0.01, 10000000000);
-camera.position.set(799, 1100, 500);
 
+camera.position.set(0, 10, 0);
+
+// Setup the renderer
 const renderer = new THREE.WebGLRenderer({antialias: true});
 renderer.setSize(width, height);
 document.body.appendChild(renderer.domElement);
 
+// Setup the camera controls
+CameraControls.install({THREE: THREE});
 const cameraControls = new CameraControls(camera, renderer.domElement);
-cameraControls.addEventListener("update", () =>
-{
-	showCameraPosition();
-});
 
-var cameraPosition = document.getElementById("camera-position");
+const cameraState = localStorage.getItem("camera-state");
 
-function showCameraPosition()
-{
-	cameraPosition!.innerHTML = `
-		<p>Camera Position :</p>
-		<p>x: ${camera.position.x.toFixed(0)}</p>
-		<p>y: ${camera.position.y.toFixed(0)}</p>
-		<p>z: ${camera.position.z.toFixed(0)}</p>
-	`;
-}
-
-showCameraPosition();
+if (cameraState)
+	cameraControls.fromJSON(JSON.parse(cameraState));
 
 // Add the grid
 const gridHelper = new THREE.GridHelper(50, 50);
 scene.add(gridHelper);
 
-// Stats
-var stats = new Stats();
+// Setup the stats
+const stats = new Stats();
 
 stats.showPanel(0);
 document.body.appendChild(stats.dom);
+
+// Camera position
+const cameraPosition = document.getElementById("camera-position");
+
+cameraPosition!.addEventListener("click", () =>
+{
+	const jsonData = JSON.stringify(cameraControls.toJSON());
+
+	localStorage.setItem("camera-state", jsonData);
+
+	/*localStorage.setItem("position.x", camera.position.x.toString());
+	localStorage.setItem("position.y", camera.position.y.toString());
+	localStorage.setItem("position.z", camera.position.z.toString());
+
+	localStorage.setItem("rotation.x", camera.rotation.x.toString());
+	localStorage.setItem("rotation.y", camera.rotation.y.toString());
+	localStorage.setItem("rotation.z", camera.rotation.z.toString());*/
+});
 
 // Load the point cloud
 new PointCloud("data/redandblack/manifest.json", 1000000, scene);

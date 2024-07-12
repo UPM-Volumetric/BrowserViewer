@@ -11,11 +11,10 @@
             padding: 0;
         }
 
-        #camera-position {
-            position: absolute;
-            left: 10px;
+        .ui {
             bottom: 10px;
-            z-index: 9999;
+            left: 10px;
+            position: absolute;
         }
     </style>
     <script type="importmap">
@@ -31,7 +30,9 @@
 </head>
 
 <body>
-    <div id="camera-position"></div>
+    <div class="ui">
+        <button id="camera-position">Update default camera position</button>
+    </div>
 </body>
 
 </html>
