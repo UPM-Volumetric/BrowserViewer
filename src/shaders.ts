@@ -20,6 +20,6 @@ export const pointCloudFragmentShader = `
     varying vec3 vColor;
 
     void main() {
-        gl_FragColor = vec4(vColor, 1);
+        gl_FragColor = linearToOutputTexel(vec4(vColor, 1));
     }
 `;
