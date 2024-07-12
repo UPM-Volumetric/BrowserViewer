@@ -4,13 +4,15 @@ import { pointCloudeVertexShader, pointCloudFragmentShader } from "./shaders";
 
 export class Tile
 {
-    private static tileMaterial = new THREE.MeshBasicMaterial({color: 0x00ff00, transparent: true, opacity: 0.20, wireframe: true});
+    private static DEBUG:boolean = false;
+    private static tileMaterial = new THREE.MeshBasicMaterial({transparent: true, opacity: 0});
     private static pointCloudMaterial = new THREE.ShaderMaterial({vertexColors: true, vertexShader: pointCloudeVertexShader, fragmentShader: pointCloudFragmentShader});
-    // static #pointCloudMaterial = new THREE.PointsMaterial({vertexColors: true, size: 1})
+    // private static pointCloudMaterial = new THREE.PointsMaterial({vertexColors: true, size: 1})
     private tile:TileJSON;
     private scene:THREE.Scene;
     private cube?:THREE.Mesh;
     private loaded:boolean = false;
+    private box?:THREE.BoxHelper;
 
     /**
      * Constructor
@@ -34,10 +36,25 @@ export class Tile
         this.cube = new THREE.Mesh(geometry, Tile.tileMaterial);
         this.cube.position.set(this.tile.x, this.tile.y, this.tile.z);
         this.cube.userData.tile = this;
-
+        
         this.scene.add(this.cube);
+        
+        if (Tile.DEBUG)
+        {
+            this.box = new THREE.BoxHelper(this.cube, 0x00ff00);
+            this.scene.add(this.box);
+        }
 
         this.load();
+    }
+
+    /**
+     * Whether the tile is in the user viewport
+     * @returns Whether the tile is in the user viewport
+     */
+    public isInViewport():boolean
+    {
+        return true;
     }
 
     /**

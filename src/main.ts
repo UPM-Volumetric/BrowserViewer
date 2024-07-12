@@ -15,7 +15,7 @@ const width = window.innerWidth;
 const height = window.innerHeight;
 
 const camera = new THREE.PerspectiveCamera(75, width / height, 0.01, 10000000000);
-camera.position.set(60, 80, 60);
+camera.position.set(799, 1100, 500);
 
 const renderer = new THREE.WebGLRenderer({antialias: true});
 renderer.setSize(width, height);
@@ -52,7 +52,7 @@ stats.showPanel(0);
 document.body.appendChild(stats.dom);
 
 // Load the point cloud
-new PointCloud("data/redandblack/manifest.json", scene);
+new PointCloud("data/redandblack/manifest.json", 1000000, scene);
 
 // Animate
 function animate ()
