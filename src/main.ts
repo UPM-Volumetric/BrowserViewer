@@ -49,14 +49,6 @@ cameraPosition!.addEventListener("click", () =>
 	const jsonData = JSON.stringify(cameraControls.toJSON());
 
 	localStorage.setItem("camera-state", jsonData);
-
-	/*localStorage.setItem("position.x", camera.position.x.toString());
-	localStorage.setItem("position.y", camera.position.y.toString());
-	localStorage.setItem("position.z", camera.position.z.toString());
-
-	localStorage.setItem("rotation.x", camera.rotation.x.toString());
-	localStorage.setItem("rotation.y", camera.rotation.y.toString());
-	localStorage.setItem("rotation.z", camera.rotation.z.toString());*/
 });
 
 // Load the point cloud
