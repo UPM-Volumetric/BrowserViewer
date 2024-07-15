@@ -1,10 +1,12 @@
 import * as THREE from "three";
 import { PLYLoader } from "three/examples/jsm/loaders/PLYLoader.js";
+import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js';
 import { pointCloudeVertexShader, pointCloudFragmentShader } from "./shaders";
 import CameraControls from "camera-controls";
 
 export class Tile
 {
+    private static DRACO:DRACOLoader;
     private static DEBUG:boolean = true;
     private static tileMaterial = new THREE.MeshBasicMaterial({transparent: true, opacity: 0});
     private static pointCloudMaterial = new THREE.ShaderMaterial({
@@ -19,7 +21,6 @@ export class Tile
     public tile:TileJSON;
     private scene:THREE.Scene;
     private cameraControls:CameraControls;
-
     private cube?:THREE.Mesh;
 
     /**
@@ -110,9 +111,12 @@ export class Tile
 
         this.representationId = representationId;
 
-        const loader = new PLYLoader();
         const uri = this.tile.representations[representationId].segment;
+        const re = /(?:\.([^.]+))?$/;
+        const extension = re.exec(uri)![1];
         
+        var loader = this.getLoader(extension);
+
         loader.load(uri, (data) =>
         {
             this.points = new THREE.Points(data, Tile.pointCloudMaterial);
@@ -135,5 +139,39 @@ export class Tile
             return 0;
 
         return this.tile.representations[this.representationId].points;
+    }
+
+    /**
+     * Returns the proper loader to use according to `extension`.
+     * Returns a `PLYLoader` for the extension `ply` and a `DracoLoader` for the extension `drc`.
+     * @param extension The file extension of the 3D model to load. Must not start with a dot.
+     * @returns The proper loader to use according to `extension`
+     */
+    private getLoader(extension:string)
+    {
+        if (extension == "ply")
+        {
+            return new PLYLoader();
+        }
+        else if (extension == "drc")
+        {
+            return Tile.getDraco();
+        }
+        else
+        {
+            throw new Error(`Loader not supported for extension ${extension}`);
+        }
+    }
+
+    private static getDraco(): DRACOLoader
+    {
+        if (!Tile.DRACO)
+        {
+            Tile.DRACO = new DRACOLoader();
+            Tile.DRACO.setDecoderPath("https://www.gstatic.com/draco/versioned/decoders/1.5.7/");
+            Tile.DRACO.preload();
+        }
+
+        return Tile.DRACO;
     }
 }

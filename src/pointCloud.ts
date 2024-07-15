@@ -61,7 +61,7 @@ export class PointCloud
         // Download the tiles near the camera first, one at the time
         for (var tile of tilesInViewport)
         {
-            var representationId = tile.tile.representations.length - 1;
+            var representationId = 0;//tile.tile.representations.length - 1;
 
             tile.loadRepresentation(representationId);
         }
