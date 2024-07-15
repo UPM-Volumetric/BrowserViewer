@@ -52,7 +52,7 @@ cameraPosition!.addEventListener("click", () =>
 });
 
 // Load the point cloud
-new PointCloud("data/redandblackdraco/manifest.json", 1000000, scene, cameraControls);
+new PointCloud("data/redandblackdraco/manifest.json", 2500000, scene, cameraControls);
 
 // Animate
 function animate ()

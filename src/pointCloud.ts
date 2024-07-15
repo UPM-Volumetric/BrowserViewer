@@ -58,18 +58,73 @@ export class PointCloud
             return a.distanceFromCamera() - b.distanceFromCamera();
         });
 
-        // Download the tiles near the camera first, one at the time
-        for (var tile of tilesInViewport)
+        var representations: number[] = [];
+        
+        // Download the lowest LOD for all tiles
+        for (var i = 0; i < tilesInViewport.length; i++)
         {
-            var representationId = 0;//tile.tile.representations.length - 1;
+            var representation = tilesInViewport[i].tile.representations.length - 1;
+            
+            representations.push(representation);
 
-            tile.loadRepresentation(representationId);
+            var pointCount = this.pointCountSolution(tilesInViewport, representations);
+
+            // Never get over the point budget
+            if (pointCount > this.maxPoints)
+                representations[i] = -1
         }
 
-        // TODO Get point count
-        console.log(this.pointCount());
+        // Then increase the LOD of all tiles equally
+        loop1: while (true)
+        {
+            for (var i = 0; i < tilesInViewport.length; i++)
+            {
+                var actualRepresentation = representations[i];
+                
+                if (actualRepresentation == 0)
+                    continue;
 
-        // TODO Respect the point budget when downloading
+                representations[i] = actualRepresentation - 1; // TODO Check if it exists
+    
+                var pointCount = this.pointCountSolution(tilesInViewport, representations);
+    
+                // Never get over the point budget
+                if (pointCount > this.maxPoints)
+                {
+                    representations[i] = actualRepresentation;
+                    break loop1;
+                }
+            }
+
+            if (representations[representations.length - 1] == 0)
+                break;
+        }
+
+        console.log(representations);
+        console.log(this.pointCountSolution(tilesInViewport, representations))
+
+        // Download the tiles near the camera first, one at the time
+        for (var i = 0; i < tilesInViewport.length; i++)
+        {
+            var id = representations[i];
+
+            tilesInViewport[i].loadRepresentation(id);
+        }
+    }
+
+    private pointCountSolution(tiles:Tile[], representations:number[]): number
+    {
+        var pointCount = 0;
+
+        for (var i = 0; i < tiles.length; i++)
+        {
+            var id = representations[i];
+
+            if (id >= 0 && id < tiles[i].tile.representations.length)
+                pointCount += tiles[i].tile.representations[id].points;
+        }
+
+        return pointCount;
     }
 
     /**

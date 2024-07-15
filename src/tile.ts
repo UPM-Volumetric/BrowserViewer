@@ -109,6 +109,10 @@ export class Tile
         if (this.representationId != -1)
             return;
 
+        // Dont download a representation that does not exist
+        if (representationId < 0 || representationId >= this.tile.representations.length)
+            return;
+
         this.representationId = representationId;
 
         const uri = this.tile.representations[representationId].segment;
